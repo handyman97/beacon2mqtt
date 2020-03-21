@@ -40,7 +40,7 @@ $ sleep 10; sudo hciconfig hci0 down
 Then, on the server-side terminal, you will see the following JSON-formatted message:
 
 ```
-{"bdaddr":"B8:27:EB:05:FC:DA","beacon_type":"ibeacon","ad_structures":[{"ad_type":255,"major":0,"minor":0,"rssi":200,"uuid":"e20a39f4-73f5-4bc4-a12f-17d1ad07a961"}]}   
+{"bdaddr":"AA:BB:CC:DD:EE:FF","beacon_type":"ibeacon","ad_structures":[{"ad_type":255,"major":0,"minor":0,"rssi":200,"uuid":"e20a39f4-73f5-4bc4-a12f-17d1ad07a961"}]}   
 ```
 
 # Installation on Debian/Ubuntu
