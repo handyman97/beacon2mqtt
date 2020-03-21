@@ -1,3 +1,8 @@
+*~
+*.html
+RCS/
+obsolete/
+
 # Prerequisites
 *.d
 
