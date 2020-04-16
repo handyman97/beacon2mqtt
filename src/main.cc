@@ -58,7 +58,7 @@ main (int argc, char** argv)
     // filters
     std::list<const char*> whitelist;
     std::list<const char*> beacon_types;
-    unsigned int cutoff_duration = 0;
+    unsigned int cutoff_duration = 10;
     // JSON formatting
     bool generic_beacon = false;
     // watchdog
@@ -255,6 +255,8 @@ quit (int sig)
 void
 _syslog (int prio, const char* fmt, ...)
 {
+    // simple masking.
+    // we can do this using "setlogmask"
     if (g_verbose == 0 && prio >= LOG_NOTICE) return;
     if (g_verbose == 1 && prio >= LOG_INFO) return;
     if (g_verbose == 2 && prio >= LOG_DEBUG) return;

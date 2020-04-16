@@ -14,23 +14,21 @@ to collect data from battery-powered BLE sensor devices into a (local) storage.
 To try `beacon2mqtt` and check out how it works, you need a Linux machine (server),
 equipped with a Bluetooth chip, such as Raspberry pi zero w, 3, and 4,
 and another machine (client) that is capable of transmitting BLE beacons,
-which could be another Raspberry pi.
+which could be another Raspberry pi.  
 Let us here assume you have two Raspberry pi's.
 
 On the server machine,
 install [mosquitto](https://mosquitto.org/) and invoke `beacon2mqtt`.
 
 ```
-$ sudo apt-get install -y mosquitto mosquitto-clients
 $ sudo beacon2mqtt  
 $ mosquitto_sub -t beacon  
 ```
 
 On the client machine,
-install [hcitool](https://kernel.googlesource.com/pub/scm/bluetooth/bluez/) and transmit beacons as follows:
+install [hcitool](http://www.bluez.org/) and transmit beacons as follows:
 
 ```
-$ sudo apt-get install -y bluez
 $ sudo hciconfig hci0 up  
 $ sudo hciconfig hci0 leadv 3  
 $ sudo hcitool -i hci0 cmd 0x08 0x0008 1E 02 01 1A 1A FF 4C 00 02 15 E2 0A 39 F4 73 F5 4B C4 A1 2F 17 D1 AD 07 A9 61 00 00 00 00 C8 00  

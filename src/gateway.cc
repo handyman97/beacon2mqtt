@@ -280,6 +280,7 @@ static void jsonify_ibeacon (const le_advertising_info*, json*);
 
 // mqtt callbacks
 // notifier recognizes "watchdog/ping" messages from watchpup, and responds with "watchdog/pong"
+static void mosq_on_connect (struct mosquitto* mosq, void* user, int rc);
 static void mosq_on_message (mosquitto*, void *user, const mosquitto_message *msg);
 // attempt of reconnection.
 static void mosq_on_disconnect (mosquitto*, void *user, int reason);
@@ -302,6 +303,7 @@ notifier_setup (const notifier_params *params)
         raise (SIGTERM);
     }
 
+    mosquitto_connect_callback_set (g_mosq, mosq_on_connect);
     mosquitto_message_callback_set (g_mosq, mosq_on_message);
     mosquitto_disconnect_callback_set (g_mosq, mosq_on_disconnect);
 
@@ -322,9 +324,9 @@ notifier_setup (const notifier_params *params)
 
     // for responding to calls from watchdog
     g_watchdog_enabled = params->watchdog_enabled;
-    if (g_watchdog_enabled)
-        mosquitto_subscribe (g_mosq, NULL, "watchdog/ping", 0);
-        // mosq, msg_id, topic, qos
+    //if (g_watchdog_enabled)
+    //    mosquitto_subscribe (g_mosq, NULL, "watchdog/ping", 0);
+    //    // mosq, msg_id, topic, qos
 
     // filters -- helpers for notifier
     g_filters.clear ();
@@ -541,8 +543,7 @@ jsonify_generic (const le_advertising_info *info, json *rslt)
 {
     char bdaddr[18];
     ba2str (&info->bdaddr, bdaddr);
-    json obj = {{"bdaddr", bdaddr},
-                {"beacon_type", "generic"}};
+    json obj = {{"bdaddr", bdaddr}};
 
     json seq = json::array ();
     const uint8_t* data = info->data;
@@ -591,6 +592,16 @@ jsonify_ibeacon (const le_advertising_info *info, json *rslt)
 
 // mosquitto callbacks
 // notifier recognizes "watchdog/ping" messages from watchpup, and responds with "watchdog/pong"
+static void
+mosq_on_connect (struct mosquitto* mosq, void* user, int rc)
+{
+    if (!g_watchdog_enabled) return;
+
+    int rslt = mosquitto_subscribe (g_mosq, NULL, "watchdog/ping", 0);
+      // mosq, msg_id, topic, qos
+
+}
+
 static void
 mosq_on_message (struct mosquitto *mosq, void *user, const struct mosquitto_message *msg)
 {
