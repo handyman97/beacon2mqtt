@@ -12,6 +12,7 @@
 
 #include <functional>
 #include <list>
+#include <string>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>

@@ -277,7 +277,7 @@ synopsis (const char* prog, const char* ver, const char* topic)
     printf ("  [scanner options]\n");
     printf ("  -i <dev>\t\tscan beacons through <dev>\n");
     printf ("  --interval=<dt>\tset scan interval to <dt>\n");
-    printf ("  --privacy\t\tset own_baddr_type to random\n");
+    printf ("  --privacy\t\tset own_baddr_type at random\n");
     printf ("\n");
 
     printf ("  [transmitter options]\n");
@@ -288,7 +288,7 @@ synopsis (const char* prog, const char* ver, const char* topic)
     printf ("  --dup\t\t\ttransmit duplicate beacons\n");
     printf ("  --no-dup[=<dt>]\tignore duplicate beacons (during any <dt>-sec period)\n");
     printf ("  --generic\t\tformat beacons in JSON w/o considering their types\n");
-    printf ("  --watchdog\t\trespond to \"ping\" from watchdog with \"pong\"\n");
+    //printf ("  --watchdog\t\trespond to \"ping\" from watchdog with \"pong\"\n");
     printf ("\n");
 
     printf ("  --verbose=<level>\tset verbosity level (0-3)\n");

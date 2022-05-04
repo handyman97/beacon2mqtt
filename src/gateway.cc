@@ -521,18 +521,32 @@ notify (le_advertising_info *info)
     // mqtt publish
     std::string str = obj.dump ();
     //syslog (LOG_NOTICE, str.c_str ());
-    for (int k = 0;; k++)
+    int rslt = mosquitto_publish (g_mosq, NULL, g_mqtt_topic, str.length() + 1, str.c_str(), 0, false);
+      // mosq, msg_id, topic, len, payload, qos, retain
+    if (rslt != MOSQ_ERR_SUCCESS)
     {
-        int rslt = mosquitto_publish (g_mosq, NULL, g_mqtt_topic, str.length() + 1, str.c_str(), 0, false);
-          // mosq, msg_id, topic, len, payload, qos, retain
-        if (rslt == MOSQ_ERR_SUCCESS) break;
+        syslog (LOG_ERR, "mosquitto_publish failed: (%d) %s", rslt, mosquitto_strerror (rslt));
+        if (rslt != MOSQ_ERR_CONN_LOST) raise (SIGHUP);
 
-        syslog (LOG_ERR, "mosquitto_publish failed: (%d) %s / %s", rslt, mosquitto_strerror (rslt), strerror (errno));
-        rslt = mosquitto_reconnect (g_mosq);
-        if (rslt == MOSQ_ERR_SUCCESS) continue;
-        syslog (LOG_ERR, "mosquitto_reconnect failed: (%d) %s", rslt, mosquitto_strerror (rslt));
-        if (k == 10) raise (SIGTERM);
+        // reconnect
+        for (int k = 0; k < 10; k++)
+        {
+            sleep (3);
+            rslt = mosquitto_reconnect (g_mosq);
+            if (rslt == MOSQ_ERR_SUCCESS) break;
+        }
+
+        syslog (LOG_NOTICE, "reconnected");
+        rslt = mosquitto_publish (g_mosq, NULL, g_mqtt_topic, str.length() + 1, str.c_str(), 0, false);
+          // mosq, msg_id, topic, len, payload, qos, retain
+        if (rslt != MOSQ_ERR_SUCCESS)
+        {
+            syslog (LOG_ERR, "something's still wrong. check it out");
+            raise (SIGHUP);
+        }
     }
+
+    assert (rslt == MOSQ_ERR_SUCCESS);
     char payload[10]; payload[9] = '\0';
     strncpy (payload, str.c_str(), 9);
     syslog (LOG_DEBUG, "topic=\"%s\" payload=\"%s..\"", g_mqtt_topic, payload);
@@ -545,6 +559,7 @@ jsonify_generic (const le_advertising_info *info, json *rslt)
     ba2str (&info->bdaddr, bdaddr);
     json obj = {{"bdaddr", bdaddr}};
 
+    // ad_structures
     json seq = json::array ();
     const uint8_t* data = info->data;
     for (int i = 0; i < info->length;)
@@ -568,24 +583,26 @@ jsonify_generic (const le_advertising_info *info, json *rslt)
 static void
 jsonify_ibeacon (const le_advertising_info *info, json *rslt)
 {
-    char bdaddr[18];
-    ba2str (&info->bdaddr, bdaddr);
-    json obj = {{"bdaddr", bdaddr},
-                {"beacon_type", "ibeacon"}};
+    json obj;
+    jsonify_generic (info, &obj);
+    //obj["beacon_type"] = "ibeacon";
 
-    json seq = json::array ();
+    //char bdaddr[18];
+    //ba2str (&info->bdaddr, bdaddr);
+    //json obj = {{"bdaddr", bdaddr},
+    //            {"beacon_type", "ibeacon"}};
+
+    //json seq = json::array ();
     ble_beacon_ibeacon ibeacon;
     ble_parse_advertising_data_ibeacon (info, &ibeacon);
     char uuid_str[37];
     uuid_unparse (ibeacon.uuid, uuid_str);
-    json elt = {{"ad_type", 0xff},
-                {"uuid", uuid_str},
-                {"major", ibeacon.major},
-                {"minor", ibeacon.minor},
-                {"rssi", ibeacon.rssi}};
-    seq.push_back (elt);
-
-    obj["ad_structures"] = seq;
+    json ibeacon_body = {{"ad_type", 0xff},
+                         {"uuid", uuid_str},
+                         {"major", ibeacon.major},
+                         {"minor", ibeacon.minor},
+                         {"rssi", ibeacon.rssi}};
+    obj["ibeacon"] = ibeacon_body;
 
     *rslt = json (obj);
 }
