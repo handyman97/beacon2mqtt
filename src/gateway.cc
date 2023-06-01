@@ -7,6 +7,7 @@
 // http://www.apache.org/licenses/LICENSE-2.0
 //
 
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <signal.h>
@@ -518,10 +519,21 @@ notify (le_advertising_info *info)
     else
         jsonify_generic (info, &obj);
 
+    // AA:BB:CC:DD:EE:FF -> aabbccddeeff
+    char bdaddr_simplified[13];
+    bdaddr_simplified[12] = '\0';
+    for (int i = 0; i < 6; i++)
+    {
+        bdaddr_simplified[2 * i] = tolower (bdaddr[3 * i]);
+        bdaddr_simplified[2 * i + 1] = tolower (bdaddr[3 * i + 1]);
+    }
+
     // mqtt publish
-    std::string str = obj.dump ();
-    //syslog (LOG_NOTICE, str.c_str ());
-    int rslt = mosquitto_publish (g_mosq, NULL, g_mqtt_topic, str.length() + 1, str.c_str(), 0, false);
+    char topic[100];
+    snprintf (topic, 100, "%s/%s", g_mqtt_topic, bdaddr_simplified);
+    std::string message = obj.dump ();
+    //syslog (LOG_NOTICE, message.c_str ());
+    int rslt = mosquitto_publish (g_mosq, NULL, topic, message.length() + 1, message.c_str(), 0, false);
       // mosq, msg_id, topic, len, payload, qos, retain
     if (rslt != MOSQ_ERR_SUCCESS)
     {
@@ -537,7 +549,7 @@ notify (le_advertising_info *info)
         }
 
         syslog (LOG_NOTICE, "reconnected");
-        rslt = mosquitto_publish (g_mosq, NULL, g_mqtt_topic, str.length() + 1, str.c_str(), 0, false);
+        rslt = mosquitto_publish (g_mosq, NULL, topic, message.length() + 1, message.c_str(), 0, false);
           // mosq, msg_id, topic, len, payload, qos, retain
         if (rslt != MOSQ_ERR_SUCCESS)
         {
@@ -548,8 +560,8 @@ notify (le_advertising_info *info)
 
     assert (rslt == MOSQ_ERR_SUCCESS);
     char payload[10]; payload[9] = '\0';
-    strncpy (payload, str.c_str(), 9);
-    syslog (LOG_DEBUG, "topic=\"%s\" payload=\"%s..\"", g_mqtt_topic, payload);
+    strncpy (payload, message.c_str(), 9);
+    syslog (LOG_DEBUG, "topic=\"%s\" payload=\"%s..\"", topic, payload);
 }
 
 static void
